@@ -12,33 +12,34 @@ motor_direito = Motor(Port.A)
 sensor_esq = ColorSensor(Port.S1)
 sensor_dir = ColorSensor(Port.S2)
 
-robo = DriveBase(motor_esquerdo, motor_direito, wheel_diameter=56, axle_track=114)
+robo = DriveBase(motor_esquerdo, motor_direito)
 
 # Parâmetros do PID
-Kp = 2.0
+Kp = 10
 Ki = 0.0
-Kd = 0.4
+Kd = 0.5
 erro_anterior = 0
 integral = 0
 
-# Loop principal
 while True:
-    # Usar apenas o canal azul (B) dos dois sensores
-    _, _, azul_esq = sensor_esq.rgb()
-    _, _, azul_dir = sensor_dir.rgb()
+    # Leitura das componentes RGB dos sensores
+    rgb_esq = sensor_esq.rgb()
+    rgb_dir = sensor_dir.rgb()
 
-    # Cálculo do erro: diferença entre os canais B
-    erro = azul_esq - azul_dir
+    # Calcular a média das componentes RGB para cada sensor
+    media_esq = sum(rgb_esq) / 3  # Média de R, G e B no sensor esquerdo
+    media_dir = sum(rgb_dir) / 3  # Média de R, G e B no sensor direito
 
-    # PID
+    # Calcula o erro: diferença entre as médias de RGB dos dois sensores
+    erro = media_dir - media_esq
+
+    # Controle PID
     integral += erro
+    integral = max(min(integral, 100), -100)  # anti-windup
     derivada = erro - erro_anterior
     correcao = Kp * erro + Ki * integral + Kd * derivada
     erro_anterior = erro
 
-    # Movimento
-    velocidade = 100
+    # Velocidade constante e correção baseada no erro
+    velocidade = 60
     robo.drive(velocidade, -correcao)
-
-    wait(10)
-
